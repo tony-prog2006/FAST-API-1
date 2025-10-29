@@ -6,6 +6,7 @@ from app.schemas.rol_schema import RolCreate, RolOut, RolConModulosCreate, RolCo
 from app.models.modulo_model import Modulo
 from app.models.rolmodulo_model import RolModulo
 from app.models.rol_model import Rol
+from typing import List
 
 router = APIRouter()
 rol_controller = RolController()
@@ -24,7 +25,7 @@ def create_rol(rol: RolCreate, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al crear rol: {str(e)}")
 
-@router.get("/roles", response_model=list[RolOut])
+@router.get("/roles", response_model=List[RolOut])
 def get_roles(db: Session = Depends(get_db)):
     try:
         return rol_controller.get_roles(db)
@@ -52,8 +53,9 @@ def create_rol_con_modulos(data: RolConModulosCreate, db: Session = Depends(get_
             db.commit()
             db.refresh(asignacion)
             asignaciones.append({
-                "id": asignacion.id,
-                "modulo": modulo
+                "id": modulo.id,
+                "nombre": modulo.nombre,
+                "descripcion": modulo.descripcion
             })
 
         return {
@@ -69,7 +71,7 @@ def create_rol_con_modulos(data: RolConModulosCreate, db: Session = Depends(get_
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error inesperado: {str(e)}")
 
-@router.get("/roles_con_modulos", response_model=list[RolConModulosOut])
+@router.get("/roles_con_modulos", response_model=List[RolConModulosOut])
 def get_roles_con_modulos(db: Session = Depends(get_db)):
     try:
         roles = db.query(Rol).all()
@@ -82,8 +84,9 @@ def get_roles_con_modulos(db: Session = Depends(get_db)):
                 modulo = db.query(Modulo).filter(Modulo.id == asignacion.id_modulo).first()
                 if modulo:
                     modulos.append({
-                        "id": asignacion.id,
-                        "modulo": modulo
+                        "id": modulo.id,
+                        "nombre": modulo.nombre,
+                        "descripcion": modulo.descripcion
                     })
             resultado.append({
                 "id": rol.id,
@@ -96,6 +99,42 @@ def get_roles_con_modulos(db: Session = Depends(get_db)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener roles con módulos: {str(e)}")
+
+@router.get("/modulos_por_rol/{id_rol}", response_model=List[ModuloAsignadoOut])
+def get_modulos_por_rol(id_rol: int, db: Session = Depends(get_db)):
+    try:
+        asignaciones = db.query(RolModulo).filter(RolModulo.id_rol == id_rol).all()
+        modulos = []
+        for asignacion in asignaciones:
+            modulo = db.query(Modulo).filter(Modulo.id == asignacion.id_modulo).first()
+            if modulo:
+                modulos.append({
+                    "id": modulo.id,
+                    "nombre": modulo.nombre,
+                    "descripcion": modulo.descripcion
+                })
+        return modulos
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener módulos del rol: {str(e)}")
+
+@router.delete("/modulos_por_rol", status_code=204)
+def delete_modulo_por_rol(id_rol: int, id_modulo: int, db: Session = Depends(get_db)):
+    try:
+        asignacion = db.query(RolModulo).filter(
+            RolModulo.id_rol == id_rol,
+            RolModulo.id_modulo == id_modulo
+        ).first()
+
+        if not asignacion:
+            raise HTTPException(status_code=404, detail="Asignación no encontrada")
+
+        db.delete(asignacion)
+        db.commit()
+        return
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error al revocar acceso: {str(e)}")
 
 @router.put("/roles_con_modulos/{id}", response_model=RolOut)
 def update_rol_con_modulos(id: int, data: RolConModulosCreate, db: Session = Depends(get_db)):
