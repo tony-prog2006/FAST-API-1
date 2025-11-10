@@ -23,7 +23,7 @@ from app.routes.sensor_routes import router as sensor_router
 from app.routes.alerta_routes import router as alerta_router
 from app.routes.dashboard_routes import router as dashboard_router
 from app.routes.modulo_routes import router as modulo_router
-from app.routes.rolmodulo_routes import router as rolmodulo_router  # ✅ Nuevo router para asignación de módulos
+from app.routes.rolmodulo_routes import router as rolmodulo_router
 
 # Creamos la instancia principal de la aplicación FastAPI
 app = FastAPI(debug=True)
@@ -47,28 +47,18 @@ app.include_router(sensor_router)
 app.include_router(alerta_router)
 app.include_router(dashboard_router)
 app.include_router(modulo_router)
-app.include_router(rolmodulo_router)  # ✅ Registro del nuevo router
+app.include_router(rolmodulo_router)
 
-# Configuración personalizada de Swagger con autenticación JWT
+# Configuración personalizada de Swagger (sin autenticación)
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="API con JWT",
+        title="API sin autenticación",
         version="1.0.0",
-        description="Documentación de la API protegida con autenticación JWT",
+        description="Documentación de la API sin restricciones de acceso",
         routes=app.routes,
     )
-    openapi_schema["components"]["securitySchemes"] = {
-        "BearerAuth": {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT"
-        }
-    }
-    for path in openapi_schema["paths"].values():
-        for method in path.values():
-            method["security"] = [{"BearerAuth": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 

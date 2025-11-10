@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.config.database import SessionLocal
 from app.models.rolmodulo_model import RolModulo
-from app.utils.auth_utils import require_admin
 
 router = APIRouter()
 
@@ -14,7 +13,7 @@ def get_db():
         db.close()
 
 @router.post("/asignar_modulo")
-def asignar_modulo(id_rol: int, id_modulo: int, current_user: dict = Depends(require_admin), db: Session = Depends(get_db)):
+def asignar_modulo(id_rol: int, id_modulo: int, db: Session = Depends(get_db)):
     existe = db.query(RolModulo).filter_by(id_rol=id_rol, id_modulo=id_modulo).first()
     if existe:
         raise HTTPException(status_code=400, detail="Este rol ya tiene acceso a ese módulo")
