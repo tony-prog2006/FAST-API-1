@@ -1,19 +1,19 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 from app.schemas.rol_schema import RolOut
 
 class UsuarioCreate(BaseModel):
-    username: str
     password: str
     nombre: str
-    edad: int = Field(..., ge=0)
+    apellido: str
+    email: EmailStr
     id_rol: int
 
 class UsuarioOut(BaseModel):
     id: int
-    username: str
     nombre: Optional[str] = None
-    edad: Optional[int] = None
+    apellido: Optional[str] = None
+    email: Optional[EmailStr] = None
     id_rol: Optional[int] = None
     rol: Optional[RolOut] = None
 

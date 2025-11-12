@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.usuario_model import Usuario
 from app.schemas.usuario_schema import UsuarioCreate
-from app.utils.auth_utils import hash_password  #  Importa la función para encriptar
+from app.utils.auth_utils import hash_password  # Importa la función para encriptar
 
 
 class UsuarioController:
@@ -16,10 +16,10 @@ class UsuarioController:
 
             # Creamos el nuevo usuario con la contraseña encriptada
             nuevo_usuario = Usuario(
-                username=usuario_data.username,
-                password=hash_password(usuario_data.password),  # Encripta la contraseña
+                password=hash_password(usuario_data.password),
                 nombre=usuario_data.nombre,
-                edad=usuario_data.edad,
+                apellido=usuario_data.apellido,
+                email=usuario_data.email,
                 id_rol=usuario_data.id_rol,
             )
             db.add(nuevo_usuario)
