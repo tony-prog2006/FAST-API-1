@@ -18,4 +18,4 @@ class UsuarioOut(BaseModel):
     rol: Optional[RolOut] = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True  
