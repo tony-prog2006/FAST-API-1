@@ -18,4 +18,7 @@ class UsuarioOut(BaseModel):
     rol: Optional[RolOut] = None
 
     class Config:
-        orm_mode = True  
+        orm_mode = True
+
+class CambioRolUsuario(BaseModel):
+    nuevo_id_rol: int

@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.usuario_model import Usuario
-from app.schemas.usuario_schema import UsuarioCreate
+from app.models.rol_model import Rol
+from app.schemas.usuario_schema import UsuarioCreate, CambioRolUsuario
 from app.utils.auth_utils import hash_password
-from utils.email import enviar_correo_bienvenida  # 👈 Importar función de correo
+from utils.email import enviar_correo_bienvenida, enviar_correo_cambio_rol
 
 class UsuarioController:
 
@@ -23,9 +24,12 @@ class UsuarioController:
             db.commit()
             db.refresh(nuevo_usuario)
 
-       
             try:
-                enviar_correo_bienvenida(destinatario=nuevo_usuario.email, nombre=nuevo_usuario.nombre, apellido=nuevo_usuario.apellido)
+                enviar_correo_bienvenida(
+                    destinatario=nuevo_usuario.email,
+                    nombre=nuevo_usuario.nombre,
+                    apellido=nuevo_usuario.apellido
+                )
             except Exception as e:
                 print(f"Error al enviar correo: {e}")
 
@@ -48,3 +52,35 @@ class UsuarioController:
             return usuario
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error al buscar usuario: {str(e)}")
+
+    def cambiar_rol_usuario(self, db: Session, id_usuario: int, datos: CambioRolUsuario):
+        try:
+            usuario = db.query(Usuario).filter(Usuario.id == id_usuario).first()
+            if not usuario:
+                raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+            rol_anterior = db.query(Rol).filter(Rol.id == usuario.id_rol).first()
+            rol_nuevo = db.query(Rol).filter(Rol.id == datos.nuevo_id_rol).first()
+
+            if not rol_nuevo:
+                raise HTTPException(status_code=404, detail="Rol nuevo no válido")
+
+            usuario.id_rol = datos.nuevo_id_rol
+            db.commit()
+            db.refresh(usuario)
+
+            try:
+                enviar_correo_cambio_rol(
+                    destinatario=usuario.email,
+                    nombre=usuario.nombre,
+                    apellido=usuario.apellido,
+                    rol_anterior=rol_anterior.nombre if rol_anterior else "Desconocido",
+                    rol_nuevo=rol_nuevo.nombre
+                )
+            except Exception as e:
+                print(f"Error al enviar correo de cambio de rol: {e}")
+
+            return usuario
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Error al cambiar rol: {str(e)}")
